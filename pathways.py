@@ -19,12 +19,12 @@ class LandingPage(tk.Frame):
         tk.Frame.__init__(self, master)
         self.controller = controller
         
-        titleLabel = tk.Label(self, text="Pathways", fg='Black', bg=CONST_BGCOLOR, font=('Tahoma', 40))
+        titleLabel = tk.Label(self, text="Pathways", fg='Black', bg=CONST_BGCOLOR, font=('Tahoma', 40, 'bold', 'underline'))
         subtitleLabel = tk.Label(self, text="The expresslane to finding your dream company!", fg='Black', bg=CONST_BGCOLOR, font=('Tahoma', 12))
         signInBtn = tk.Button(self, text="Sign In", fg='Black', command=lambda: controller.show_frame(SignInPage), font=('Tahoma', 16))
         createAccBtn = tk.Button(self, text="Create Account", fg='Black', command=lambda: controller.show_frame(CreateAccPage), font=('Tahoma', 16))
         
-        titleLabel.place(x=230, y=70)
+        titleLabel.place(x=210, y=60)
         subtitleLabel.place(x=170, y=180)
         signInBtn.place(x=200, y=270)
         createAccBtn.place(x=320, y=270)
@@ -35,19 +35,39 @@ class SignInPage(tk.Frame):
         tk.Frame.__init__(self, master)
         self.controller = controller
         
-        goHomeBtn = tk.Button(self, text="Go Back", command=lambda: controller.show_frame(LandingPage), fg='Black', font=('Tahoma', 12))
-        
+        goHomeBtn = tk.Button(self, text="<- Back", command=lambda: controller.show_frame(LandingPage), fg='Black', font=('Tahoma', 12))
         goHomeBtn.grid(padx=10, pady=10)
+        
+        titleLabel = tk.Label(self, text="Sign In", fg='Black', bg=CONST_BGCOLOR, font=('Tahoma', 20, 'bold', 'underline'))
+        titleLabel.place(x=280, y=50)
+        
+        self.email_var=tk.StringVar()
+        self.passw_var=tk.StringVar()
+        
+        self.email_label = tk.Label(self, text = 'Email:', font=('Tahoma',11, 'bold'))
+        self.email_entry = tk.Entry(self,textvariable = self.email_var, font=('Tahoma',11,'normal'))
+        self.passw_label = tk.Label(self, text = 'Password:', font = ('Tahoma',11,'bold'))
+        self.passw_entry = tk.Entry(self, textvariable = self.passw_var, font = ('Tahoma',11,'normal'), show = '*')
+        self.signIn_btn=tk.Button(self, text = 'Sign in', font = ('Tahoma',14,'normal'))
+        
+        self.email_label.place(x=250, y=190)
+        self.email_entry.place(x=320, y=190)
+        self.passw_label.place(x=218, y=220)
+        self.passw_entry.place(x=320, y=220)
+        self.signIn_btn.place(x=300, y=380)
+        
 
 
 class CreateAccPage(tk.Frame):
-    # initializes all the widgets and places them in the frame
     def __init__(self, master, controller):
         tk.Frame.__init__(self, master)
         self.controller = controller
         
-        goHomeBtn = tk.Button(self, text="Go Back", command=lambda: controller.show_frame(LandingPage), fg='Black', font=('Tahoma', 12))
+        goHomeBtn = tk.Button(self, text="<- Back", command=lambda: controller.show_frame(LandingPage), fg='Black', font=('Tahoma', 12))
         goHomeBtn.grid(padx=10, pady=10)
+        
+        titleLabel = tk.Label(self, text="Create Account", fg='Black', bg=CONST_BGCOLOR, font=('Tahoma', 20, 'bold', 'underline'))
+        titleLabel.place(x=240, y=50)
         
         self.fname_var=tk.StringVar()
         self.lname_var=tk.StringVar()
@@ -55,42 +75,80 @@ class CreateAccPage(tk.Frame):
         self.passw_var=tk.StringVar()
         self.repassw_var=tk.StringVar()
         
-        fname_label = tk.Label(self, text = 'First Name:', font=('Tahoma',11, 'bold'))
-        fname_entry = tk.Entry(self,textvariable = self.fname_var, font=('Tahoma',11,'normal'))
-        lname_label = tk.Label(self, text = 'Last Name:', font=('Tahoma',11, 'bold'))
-        lname_entry = tk.Entry(self,textvariable = self.lname_var, font=('Tahoma',11,'normal'))
-        email_label = tk.Label(self, text = 'Email:*', font=('Tahoma',11, 'bold'))
-        email_entry = tk.Entry(self,textvariable = self.email_var, font=('Tahoma',11,'normal'))
-        passw_label = tk.Label(self, text = 'Password:*', font = ('Tahoma',11,'bold'))
-        passw_entry = tk.Entry(self, textvariable = self.passw_var, font = ('Tahoma',11,'normal'), show = '*')
-        repassw_label = tk.Label(self, text = 'Re-enter Password:*', font = ('Tahoma',11,'bold'))
-        repassw_entry = tk.Entry(self, textvariable = self.repassw_var, font = ('Tahoma',11,'normal'), show = '*')
-        submit_btn=tk.Button(self, text = 'Submit', command= self.submitEntries, font = ('Tahoma',14,'normal'))
+        self.fname_label = tk.Label(self, text = 'First Name:', font=('Tahoma',11, 'bold'))
+        self.fname_entry = tk.Entry(self,textvariable = self.fname_var, font=('Tahoma',11,'normal'))
+        self.lname_label = tk.Label(self, text = 'Last Name:', font=('Tahoma',11, 'bold'))
+        self.lname_entry = tk.Entry(self,textvariable = self.lname_var, font=('Tahoma',11,'normal'))
+        self.email_label = tk.Label(self, text = 'Email:*', font=('Tahoma',11, 'bold'))
+        self.email_entry = tk.Entry(self,textvariable = self.email_var, font=('Tahoma',11,'normal'))
+        self.passw_label = tk.Label(self, text = 'Password:*', font = ('Tahoma',11,'bold'))
+        self.passw_entry = tk.Entry(self, textvariable = self.passw_var, font = ('Tahoma',11,'normal'), show = '*')
+        self.repassw_label = tk.Label(self, text = 'Re-enter Password:*', font = ('Tahoma',11,'bold'))
+        self.repassw_entry = tk.Entry(self, textvariable = self.repassw_var, font = ('Tahoma',11,'normal'), show = '*')
+        self.subtitle_label = tk.Label(self, text = 'fields with an asterik(*) are required', font = ('Calibri',9,'italic'), bg=CONST_BGCOLOR)
+        self.submit_btn=tk.Button(self, text = 'Submit', command= self.submitEntries, font = ('Tahoma',14,'normal'))
         
-        fname_label.place(x=218, y=90)
-        fname_entry.place(x=320, y=90)
-        lname_label.place(x=220, y=120)
-        lname_entry.place(x=320, y=120)
-        email_label.place(x=248, y=150)
-        email_entry.place(x=320, y=150)
-        passw_label.place(x=216, y=180)
-        passw_entry.place(x=320, y=180)
-        repassw_label.place(x=147, y=210)
-        repassw_entry.place(x=320, y=210)
-        submit_btn.place(x=300, y=290)
-
+        self.fname_label.place(x=218, y=150)
+        self.fname_entry.place(x=320, y=150)
+        self.lname_label.place(x=220, y=180)
+        self.lname_entry.place(x=320, y=180)
+        self.email_label.place(x=248, y=210)
+        self.email_entry.place(x=320, y=210)
+        self.passw_label.place(x=216, y=240)
+        self.passw_entry.place(x=320, y=240)
+        self.repassw_label.place(x=147, y=270)
+        self.repassw_entry.place(x=320, y=270)
+        self.subtitle_label.place(x=300, y=300)
+        self.submit_btn.place(x=300, y=380)
+    
     def submitEntries(self) -> None:
-        print(self.fname_var.get())
-        print(self.lname_var.get())
-        print(self.email_var.get())
-        print(self.passw_var.get())
-        print(self.repassw_var.get())
+        fname = self.fname_var.get()
+        lname = self.lname_var.get()
+        email = self.email_var.get()
+        passw = self.passw_var.get()
+        repassw = self.repassw_var.get()
+        
+        entriesVerified = self.verifyEntries(email, passw, repassw)
+        if entriesVerified:
+            addAccToDatabase(fname, lname, email, passw)
+        
+        self.emptyEntries()
         return
     
-    def verifyEntries(self) -> None:
+    def verifyEntries(self, email, passw, repassw) -> bool:
+        message = tk.Label(self, text = '', font=('Tahoma',11, 'bold'), bg='red')
+        
+        # WIP: MUST CHECK TO SEE IF THE EMAIL EXISTS ALREADY IN THE DATABASE bc emails are unique
+        if '@' not in email:
+            message.config(text = "Not a valid email address!")
+        elif passw != repassw:
+            message.config(text = "Passwords do not match!")
+        elif len(passw) < 8:
+            message.config(text = "Passwords not long enough!")
+        else:
+            message.config(text = "Account creation successful! Sending you to sign in...", bg='lawn green')
+        
+        if message['bg'] == 'lawn green':
+            message.place(x=140, y=340)
+        else:
+            message.place(x=240, y=340)
+            
+        self.after(2000, lambda: message.place_forget())    # small delay to allow the message to be displayed for 3s
+        if message['bg'] == 'lawn green':    # if everything is verified, return True
+            self.after(2000, lambda: self.controller.show_frame(LandingPage))
+            return True
+        else:
+            return False
+    
+    def emptyEntries(self) -> None:
+        self.fname_entry.delete(0, 'end')
+        self.lname_entry.delete(0, 'end')
+        self.email_entry.delete(0, 'end')
+        self.passw_entry.delete(0, 'end')
+        self.repassw_entry.delete(0, 'end')
         return
     
-    def addAccToDatabase(self) -> None:
+    def addAccToDatabase(first, last, emai, pas) -> None:   # WIP
         return
 
 
@@ -114,7 +172,7 @@ class Pathways(tk.Tk):
             frame.configure(background=CONST_BGCOLOR)
         
         self.show_frame(LandingPage)
-
+    
     def show_frame(self, cont) -> None:
         frame = self.frames[cont]
         frame.tkraise()
