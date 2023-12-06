@@ -11,6 +11,8 @@ import tkinter as tk
 from tkinter import ttk
 import random
 
+import sqlite3
+
 CONST_WIDTH = 500
 CONST_HEIGHT = 700
 CONST_BGCOLOR = '#f5e5d3'
@@ -110,15 +112,17 @@ class CreateAccPage(tk.Frame):
         
         entriesVerified = self.verifyEntries(email, passw, repassw)
         if entriesVerified:
-            addAccToDatabase(fname, lname, email, passw)
+            self.addAccToDatabase(fname, lname, email, passw)
         
         return
     
     def verifyEntries(self, email, passw, repassw) -> bool:
         message = tk.Label(self, text = '', font=('Tahoma',11, 'bold'), bg='red')
         
-        # WIP: MUST CHECK TO SEE IF THE EMAIL EXISTS ALREADY IN THE DATABASE bc emails are unique
-        if '@' not in email:
+        if self.emailInUse(email):
+            message.config(text = "Email address already in use!")
+            self.emptyEntries(False,True, True, True)
+        elif '@' not in email:
             message.config(text = "Not a valid email address!")
             self.emptyEntries(False,True, True, True)
         elif passw != repassw:
@@ -136,9 +140,9 @@ class CreateAccPage(tk.Frame):
         else:
             message.place(x=240, y=340)
             
-        self.after(2000, lambda: message.place_forget())    # small delay to allow the message to be displayed for 3s
+        self.after(2500, lambda: message.place_forget())    # small delay to allow the message to be displayed for 2.5s
         if message['bg'] == 'lawn green':    # if everything is verified, return True
-            self.after(2000, lambda: self.controller.show_frame(SignInPage))
+            self.after(2500, lambda: self.controller.show_frame(SignInPage))
             return True
         else:
             return False
@@ -158,7 +162,20 @@ class CreateAccPage(tk.Frame):
             self.repassw_entry.delete(0, 'end')
         return
     
-    def addAccToDatabase(first, last, emai, pas) -> None:   # WIP
+    def emailInUse(self, email) -> bool:
+        self.controller.cursor.execute('''SELECT email
+                                        FROM User AS U
+                                        WHERE U.email = ?;
+                                        ''', (email,))
+        matchingEmail = self.controller.cursor.fetchone()
+        return matchingEmail is not None
+    
+    def addAccToDatabase(self, first, last, emai, pas) -> None:
+        self.controller.cursor.execute('SELECT COUNT(user_ID) FROM User;')
+        newAccountID = self.controller.cursor.fetchone()
+        self.controller.cursor.execute('INSERT INTO User (user_ID, password, email, first_name, last_name) VALUES (?, ?, ?, ?, ?);', (newAccountID[0], pas, emai, first, last))
+        self.controller.conn.commit()
+        
         return
 
 
@@ -212,6 +229,7 @@ class QuizPage(tk.Frame):
         industryArr = ['Defense', 'E-Commerce', 'Electronics', 'Entertainment', 'Finance', 'Life Sciences', 'Retail',
                         'Social Media', 'Software Technology', 'Technology Services', 'Telecommunications'
                         ]
+        
         
         fullPartTmpArr = ['Full-time', 'Part-time']
         
@@ -312,6 +330,9 @@ class Pathways(tk.Tk):
             frame.configure(background=CONST_BGCOLOR)
         
         self.show_frame(ProfilePage)
+        
+        self.conn = sqlite3.connect('pathways.db') 
+        self.cursor = self.conn.cursor()
     
     def show_frame(self, cont) -> None:
         frame = self.frames[cont]
@@ -322,3 +343,5 @@ class Pathways(tk.Tk):
 if __name__ == "__main__":
     app = Pathways()
     app.mainloop()
+    app.cursor.close()
+    app.conn.close()
