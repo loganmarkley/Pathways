@@ -197,21 +197,21 @@ class QuizPage(tk.Frame):
                     'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming'
                     ]
         
-        benefitsArr = ['Health Insurance', 'Employee Discount', 'Parental Leave', 'Home and Auto', 'Wellness Programs', 'Education',
-                    'Free Snacks And Drinks', 'Gym On Site', 'Stock Options', 'Professional Development', 'Flexible Work Hours',
-                    'Part Time Off', 'No Dress Code', 'Birthday And Holiday Gifts', 'Retirement Plans', 'Wellness Program',
-                    'Stock Options', 'Flexible Work Hours', 'Professional Development', 'Gym On Site', 'Employee Assistance Programs'
-                    ]
+        benefitsArr = ['Birthday And Holiday Gifts', 'Education', 'Employee Assistance Programs', 'Employee Discount',
+                        'Flexible Work Hours', 'Free Snacks And Drinks', 'Gym On Site', 'Health Insurance', 'Home and Auto',
+                        'No Dress Code', 'Parental Leave', 'Paid Time Off', 'Professional Development',
+                        'Retirement Plans', 'Stock Options', 'Wellness Programs'
+                        ]
         
-        valuesArr = [ 'Customer Obsession', 'Ownership', 'Innovation', 'Integrity', 'Inclusion', 'Collaboration', 'Customer Focus',
-                    'Commitment To Excellence', 'Teamwork', 'Sustainability', 'Health', 'Customer Satisfaction', 'Inclusion',
-                    'User Focus', 'Design', 'User Experience', 'Customer Focus', 'Everyday Low Prices',
-                    'Sustainability', 'Creativity', 'Inspiration', 'Trust', 'Entertainment', 'Safety', 'Excellence',
-                    'Public Service', 'Economic Stability'
-                    ]
+        valuesArr = ['Commitment To Excellence', 'Creativity', 'Customer Focus', 'Customer Obsession',
+                        'Customer Satisfaction', 'Design', 'Economic Stability', 'Entertainment', 'Everyday Low Prices',
+                        'Excellence', 'Health', 'Inclusion', 'Innovation', 'Inspiration', 'Integrity', 'Ownership',
+                        'Public Service', 'Safety', 'Sustainability', 'Teamwork', 'Trust', 'User Experience', 'User Focus'
+                        ]
         
-        industryArr = ['E-Commerce', 'Telecommunications', 'Social Media', 'Defense', 'Finance', 'Technology Services',
-                        'Retail', 'Life Sciences', 'Entertainment', 'Software Technology', 'Electronics']
+        industryArr = ['Defense', 'E-Commerce', 'Electronics', 'Entertainment', 'Finance', 'Life Sciences', 'Retail',
+                        'Social Media', 'Software Technology', 'Technology Services', 'Telecommunications'
+                        ]
         
         fullPartTmpArr = ['Full-time', 'Part-time']
         
