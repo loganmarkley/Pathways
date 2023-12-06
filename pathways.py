@@ -56,7 +56,6 @@ class SignInPage(tk.Frame):
         self.passw_label.place(x=218, y=220)
         self.passw_entry.place(x=320, y=220)
         self.signIn_btn.place(x=300, y=380)
-        
 
 
 class CreateAccPage(tk.Frame):
@@ -187,6 +186,9 @@ class QuizPage(tk.Frame):
         backBtn = tk.Button(self, text="<- Log Out", command=lambda: controller.show_frame(LandingPage), fg='Black', font=('Tahoma', 12))
         backBtn.grid(padx=10, pady=10)
         
+        titleLabel = tk.Label(self, text="Preferences Quiz!", fg='Black', bg=CONST_BGCOLOR, font=('Tahoma', 20, 'bold', 'underline'))
+        titleLabel.place(x=240, y=5)
+        
         statesArr = ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware', 
                     'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana', 
                     'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi', 'Missouri', 'Montana', 
@@ -213,11 +215,18 @@ class QuizPage(tk.Frame):
         
         fullPartTmpArr = ['Full-time', 'Part-time']
         
+        # initialize the variables that hold the values from the questions here
         self.fullPartOrTmp_var = tk.StringVar()
         self.industry_var = tk.StringVar()
         self.values_var = tk.StringVar()
+        self.benefits_var = tk.StringVar()
+        self.location1_var = tk.StringVar()
+        self.location1_var.set('*Location 1')
+        self.location2_var = tk.StringVar()
+        self.location3_var = tk.StringVar()
+        self.salary_var = tk.IntVar()
         
-        
+        # create each of the widgets to be displayed here
         self.fullPartOrTmp_label = tk.Label(self, text='Full-time or Part-time?', font=('Tahoma',11, 'bold'))
         self.fullPartOrTmp_dropdown = tk.OptionMenu(self, self.fullPartOrTmp_var, *fullPartTmpArr)
         
@@ -226,21 +235,61 @@ class QuizPage(tk.Frame):
         
         self.values_label = tk.Label(self, text='The value that you align the most with?', font=('Tahoma',11, 'bold'))
         self.values_dropdown = tk.OptionMenu(self, self.values_var, *valuesArr)
-        # self.location_label = tk.Label(self, text = 'Email:*', font=('Tahoma',11, 'bold'))
-        # self.location_dropdown = tk.Entry(self,textvariable = self.email_var, font=('Tahoma',11,'normal'))
-        # self.values_label
-        # self.values_dropdown
-        # self.benefits_label
-        # self.benefits_dropdown
-        # self.salary_label
-        # self.salary_slider
         
-        self.fullPartOrTmp_label.place(x=180, y=50)
-        self.fullPartOrTmp_dropdown.place(x=400, y=50)
-        self.industry_label.place(x=180, y=80)
-        self.industry_dropdown.place(x=400, y=80)
-        self.values_label.place(x=180, y=110)
-        self.values_dropdown.place(x=400, y=110)
+        self.benefits_label = tk.Label(self, text='Which benefit do you value the most?', font=('Tahoma',11, 'bold'))
+        self.benefits_dropdown = tk.OptionMenu(self, self.benefits_var, *benefitsArr)
+        
+        self.location_label = tk.Label(self, text = 'Choose up to 3 of your desired states to work in:', font=('Tahoma',11, 'bold'))
+        self.location_subtitle_label = tk.Label(self, text = '*only 1 state selection is required*', font = ('Calibri',9,'italic'), bg=CONST_BGCOLOR)
+        self.location1_dropdown = tk.OptionMenu(self, self.location1_var, *statesArr)
+        self.location2_dropdown = tk.OptionMenu(self, self.location2_var, *statesArr)
+        self.location3_dropdown = tk.OptionMenu(self, self.location3_var, *statesArr)
+        
+        self.salary_label = tk.Label(self, text='What is your desired starting salary?', font=('Tahoma',11, 'bold'))
+        self.salary_scale = tk.Scale(
+            self,
+            variable=self.salary_var,
+            from_=25000,
+            to=125000,
+            orient=tk.HORIZONTAL,
+            length=650,
+            tickinterval=10000,
+            resolution=2500,
+        )
+        
+        # inititally place all of the widgets here
+        self.fullPartOrTmp_label.place(x=140, y=55)
+        self.fullPartOrTmp_dropdown.place(x=470, y=55-2)
+        self.industry_label.place(x=140, y=90)
+        self.industry_dropdown.place(x=470, y=90-2)
+        self.values_label.place(x=140, y=125)
+        self.values_dropdown.place(x=470, y=125-2)
+        self.benefits_label.place(x=140, y=160)
+        self.benefits_dropdown.place(x=470, y=160-2)
+        self.location_label.place(x=90, y=210)
+        self.location_subtitle_label.place(x=180, y=240)
+        self.location1_dropdown.place(x=470, y=210-2)
+        self.location2_dropdown.place(x=470, y=240-2)
+        self.location3_dropdown.place(x=470, y=270-2)
+        self.salary_label.place(x=220, y=320)
+        self.salary_scale.place(x=20, y=350)
+        
+        # initially create and place the clear quiz and submit quiz buttons
+        self.clear_btn=tk.Button(self, text = 'Clear Responses', command=lambda: self.clearAllResponses(), font = ('Tahoma',14,'normal'), bg='firebrick2')
+        self.clear_btn.place(x=170, y=435)
+        self.submit_btn=tk.Button(self, text = 'Submit Quiz', font = ('Tahoma',14,'normal'), bg='green3')
+        self.submit_btn.place(x=400, y=435)
+        
+    def clearAllResponses(self) -> None:
+        self.fullPartOrTmp_var.set('')
+        self.industry_var.set('')
+        self.values_var.set('')
+        self.benefits_var.set('')
+        self.location1_var.set('*Location 1')
+        self.location2_var.set('')
+        self.location3_var.set('')
+        self.salary_var.set(25000)
+        return
 
 
 class Pathways(tk.Tk):
@@ -268,7 +317,6 @@ class Pathways(tk.Tk):
         frame = self.frames[cont]
         frame.tkraise()
         return
-
 
 
 if __name__ == "__main__":
