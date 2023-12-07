@@ -38,7 +38,7 @@ class SignInPage(tk.Frame):
         tk.Frame.__init__(self, master)
         self.controller = controller
         
-        goHomeBtn = tk.Button(self, text="<- Back", command=lambda: controller.show_frame(LandingPage), fg='Black', font=('Tahoma', 12))
+        goHomeBtn = tk.Button(self, text="<- Back", command=lambda: self.controller.show_frame(LandingPage), fg='Black', font=('Tahoma', 12))
         goHomeBtn.grid(padx=10, pady=10)
         
         titleLabel = tk.Label(self, text="Sign In", fg='Black', bg=CONST_BGCOLOR, font=('Tahoma', 20, 'bold', 'underline'))
@@ -51,13 +51,55 @@ class SignInPage(tk.Frame):
         self.email_entry = tk.Entry(self,textvariable = self.email_var, font=('Tahoma',11,'normal'))
         self.passw_label = tk.Label(self, text = 'Password:', font = ('Tahoma',11,'bold'))
         self.passw_entry = tk.Entry(self, textvariable = self.passw_var, font = ('Tahoma',11,'normal'), show = '*')
-        self.signIn_btn=tk.Button(self, text = 'Sign in', font = ('Tahoma',14,'normal'))
+        self.signIn_btn=tk.Button(self, text = 'Sign in', command=lambda:self.signIntoAccount(), font = ('Tahoma',14,'normal'))
         
         self.email_label.place(x=250, y=190)
         self.email_entry.place(x=320, y=190)
         self.passw_label.place(x=218, y=220)
         self.passw_entry.place(x=320, y=220)
         self.signIn_btn.place(x=300, y=380)
+    
+    def signIntoAccount(self) -> None:
+        message = tk.Label(self, text = '', font=('Tahoma',11, 'bold'), bg='firebrick2')
+        
+        if self.accountExistsInDatabase() and self.passwordIsCorrect():
+            self.controller.cursor.execute('SELECT user_ID FROM User WHERE email=?;', (self.email_var.get(),))
+            userIDfromDB = self.controller.cursor.fetchone()
+            self.controller.currentUserId = userIDfromDB[0]
+            message.config(text='Successfully signed in! Taking you to your profile page...', bg='green3')
+            message.place(x=140, y=340)
+            self.after(1500, lambda: message.place_forget())    # small delay to allow the message to be displayed for 1.5s
+            self.after(1500, lambda: self.controller.show_frame(ProfilePage))
+            self.after(1500, lambda: self.email_entry.delete(0,'end'))
+            self.after(1500, lambda: self.passw_entry.delete(0,'end'))
+        elif self.accountExistsInDatabase() is False:
+            message.config(text='There is not an account associated with that email.')
+            message.place(x=140, y=340)
+            self.email_entry.delete(0,'end')
+            self.passw_entry.delete(0,'end')
+            self.after(1500, lambda: message.place_forget())    # small delay to allow the message to be displayed for 1.5s
+        else:
+            message.config(text='That password was not correct, please try again.')
+            message.place(x=140, y=340)
+            self.passw_entry.delete(0,'end')
+            self.after(1500, lambda: message.place_forget())    # small delay to allow the message to be displayed for 1.5s
+        
+        return
+    
+    def accountExistsInDatabase(self) -> bool:
+        self.controller.cursor.execute('SELECT user_ID FROM User WHERE email=?;', (self.email_var.get(),))
+        if self.controller.cursor.fetchone() is not None:
+            return True
+        else:
+            return False
+    
+    def passwordIsCorrect(self) -> bool:
+        self.controller.cursor.execute('SELECT user_ID FROM User WHERE email=? AND password=?;', (self.email_var.get(), self.passw_var.get()))
+        if self.controller.cursor.fetchone() is not None:
+            return True
+        else:
+            return False
+        return True
 
 
 class CreateAccPage(tk.Frame):
@@ -117,7 +159,7 @@ class CreateAccPage(tk.Frame):
         return
     
     def verifyEntries(self, email, passw, repassw) -> bool:
-        message = tk.Label(self, text = '', font=('Tahoma',11, 'bold'), bg='red')
+        message = tk.Label(self, text = '', font=('Tahoma',11, 'bold'), bg='firebrick2')
         
         if self.emailInUse(email):
             message.config(text = "Email address already in use!")
@@ -132,16 +174,16 @@ class CreateAccPage(tk.Frame):
             message.config(text = "Passwords not long enough!")
             self.emptyEntries(False, False, True, True)
         else:
-            message.config(text = "Account creation successful! Sending you to sign in...", bg='lawn green')
+            message.config(text = "Account creation successful! Sending you to sign in...", bg='green3')
             self.emptyEntries(True, False, False, False)
         
-        if message['bg'] == 'lawn green':
+        if message['bg'] == 'green3':
             message.place(x=140, y=340)
         else:
             message.place(x=240, y=340)
             
         self.after(2500, lambda: message.place_forget())    # small delay to allow the message to be displayed for 2.5s
-        if message['bg'] == 'lawn green':    # if everything is verified, return True
+        if message['bg'] == 'green3':    # if everything is verified, return True
             self.after(2500, lambda: self.controller.show_frame(SignInPage))
             return True
         else:
@@ -185,7 +227,7 @@ class ProfilePage(tk.Frame):
         self.controller = controller
         
         #NEED TO ADD LOG OUT FUNCTIONALITY!!
-        logOutBtn = tk.Button(self, text="<- Log Out", command=lambda: controller.show_frame(LandingPage), fg='Black', font=('Tahoma', 12))
+        logOutBtn = tk.Button(self, text="<- Log Out", command=lambda: self.signOut(), fg='Black', font=('Tahoma', 12))
         logOutBtn.grid(padx=10, pady=10)
         
         titleLabel = tk.Label(self, text="Profile Page", fg='Black', bg=CONST_BGCOLOR, font=('Tahoma', 20, 'bold', 'underline'))
@@ -193,6 +235,22 @@ class ProfilePage(tk.Frame):
         
         takeQuizBtn = tk.Button(self, text="Take A Preferences Quiz!", command=lambda: controller.show_frame(QuizPage), fg='Black', font=('Tahoma', 12))
         takeQuizBtn.place(x=238, y=120)
+        
+        # self.controller.cursor.execute('SELECT fname, lname FROM User WHERE userID=?;', (self.controller.currentUserId,))
+        # names = self.controller.cursor.fetchall()
+        # self.fname = names[0]
+        # self.lname = names[1]
+        # nameText = f'Hello {self.fname} {self.lname}!'
+        # nameLabel = tk.Label(self, text=nameText, fg='Black', bg=CONST_BGCOLOR, font=('Tahoma', 15, 'bold'))
+        # nameLabel.place(x=250, y=200)
+        
+    def signOut(self) -> None:
+        self.controller.currentUserId = -1
+        self.controller.show_frame(LandingPage)
+        return
+    
+    def showNameText(self) -> None:
+        return
 
 
 class QuizPage(tk.Frame):
@@ -329,10 +387,12 @@ class Pathways(tk.Tk):
             frame.grid(row=0, column=0, sticky="nsew")
             frame.configure(background=CONST_BGCOLOR)
         
-        self.show_frame(ProfilePage)
+        self.show_frame(LandingPage)
         
         self.conn = sqlite3.connect('pathways.db') 
         self.cursor = self.conn.cursor()
+        
+        self.currentUserId = -1
     
     def show_frame(self, cont) -> None:
         frame = self.frames[cont]
