@@ -80,7 +80,7 @@ class SignInPage(tk.Frame):
             self.after(1500, lambda: message.place_forget())    # small delay to allow the message to be displayed for 1.5s
         else:
             message.config(text='That password was not correct, please try again.')
-            message.place(x=140, y=340)
+            message.place(x=150, y=340)
             self.passw_entry.delete(0,'end')
             self.after(1500, lambda: message.place_forget())    # small delay to allow the message to be displayed for 1.5s
         
@@ -233,10 +233,10 @@ class ProfilePage(tk.Frame):
         titleLabel = tk.Label(self, text="Profile Page", fg='Black', bg=CONST_BGCOLOR, font=('Tahoma', 20, 'bold', 'underline'))
         titleLabel.place(x=250, y=50)
         
-        takeQuizBtn = tk.Button(self, text="Take A Preferences Quiz!", command=lambda: controller.show_frame(QuizPage), fg='Black', font=('Tahoma', 12))
+        takeQuizBtn = tk.Button(self, text="Take A Preferences Quiz!", command=lambda: self.sendToQuiz(), fg='Black', font=('Tahoma', 12))
         takeQuizBtn.place(x=238, y=120)
         
-        # self.controller.cursor.execute('SELECT fname, lname FROM User WHERE userID=?;', (self.controller.currentUserId,))
+        # self.controller.cursor.execute('SELECT first_name, last_name FROM User WHERE user_ID=?;', (self.controller.currentUserId,))
         # names = self.controller.cursor.fetchall()
         # self.fname = names[0]
         # self.lname = names[1]
@@ -249,6 +249,40 @@ class ProfilePage(tk.Frame):
         self.controller.show_frame(LandingPage)
         return
     
+    def sendToQuiz(self) -> None:
+        self.controller.cursor.execute('''SELECT user_ID
+                                        FROM Salary_Question AS S
+                                        WHERE S.user_ID = ?;
+                                        ''', (self.controller.currentUserId,))
+        userID = self.controller.cursor.fetchone()   # returns the user's ID if they have quiz responses currently stored in the database.
+        if userID is not None:  # if they have taken a quiz already...
+            self.controller.cursor.execute('''DELETE
+                                        FROM Salary_Question
+                                        WHERE user_ID = ?;
+                                        ''', (self.controller.currentUserId,))
+            self.controller.cursor.execute('''DELETE
+                                        FROM Benefit_Question
+                                        WHERE user_ID = ?;
+                                        ''', (self.controller.currentUserId,))
+            self.controller.cursor.execute('''DELETE
+                                        FROM Time_Question
+                                        WHERE user_ID = ?;
+                                        ''', (self.controller.currentUserId,))
+            self.controller.cursor.execute('''DELETE
+                                        FROM Industry_Question
+                                        WHERE user_ID = ?;
+                                        ''', (self.controller.currentUserId,))
+            self.controller.cursor.execute('''DELETE
+                                        FROM Value_Question
+                                        WHERE user_ID = ?;
+                                        ''', (self.controller.currentUserId,))
+            self.controller.cursor.execute('''DELETE
+                                        FROM Location_Question
+                                        WHERE user_ID = ?;
+                                        ''', (self.controller.currentUserId,))
+            self.controller.conn.commit()
+        self.controller.show_frame(QuizPage)
+    
     def showNameText(self) -> None:
         return
 
@@ -258,7 +292,7 @@ class QuizPage(tk.Frame):
         tk.Frame.__init__(self, master)
         self.controller = controller
         
-        backBtn = tk.Button(self, text="<- Log Out", command=lambda: controller.show_frame(LandingPage), fg='Black', font=('Tahoma', 12))
+        backBtn = tk.Button(self, text="<- Back", command=lambda: controller.show_frame(LandingPage), fg='Black', font=('Tahoma', 12))
         backBtn.grid(padx=10, pady=10)
         
         titleLabel = tk.Label(self, text="Preferences Quiz!", fg='Black', bg=CONST_BGCOLOR, font=('Tahoma', 20, 'bold', 'underline'))
@@ -289,7 +323,7 @@ class QuizPage(tk.Frame):
                         ]
         
         
-        fullPartTmpArr = ['Full-time', 'Part-time']
+        fullPartTmpArr = ['Full', 'Part']
         
         # initialize the variables that hold the values from the questions here
         self.fullPartOrTmp_var = tk.StringVar()
@@ -353,9 +387,9 @@ class QuizPage(tk.Frame):
         # initially create and place the clear quiz and submit quiz buttons
         self.clear_btn=tk.Button(self, text = 'Clear Responses', command=lambda: self.clearAllResponses(), font = ('Tahoma',14,'normal'), bg='firebrick2')
         self.clear_btn.place(x=170, y=435)
-        self.submit_btn=tk.Button(self, text = 'Submit Quiz', font = ('Tahoma',14,'normal'), bg='green3')
+        self.submit_btn=tk.Button(self, text = 'Submit Quiz', command=lambda: self.uploadQuizResponses(), font = ('Tahoma',14,'normal'), bg='green3')
         self.submit_btn.place(x=400, y=435)
-        
+    
     def clearAllResponses(self) -> None:
         self.fullPartOrTmp_var.set('')
         self.industry_var.set('')
@@ -366,6 +400,194 @@ class QuizPage(tk.Frame):
         self.location3_var.set('')
         self.salary_var.set(25000)
         return
+    
+    def uploadQuizResponses(self) -> None:
+        verified = self.verifyEntries()
+        if verified:
+            self.controller.cursor.execute('INSERT INTO Time_Question (user_ID, time_answer) VALUES (?, ?);', (self.controller.currentUserId, self.fullPartOrTmp_var.get()))
+            self.controller.cursor.execute('INSERT INTO Industry_Question (user_ID, industry_answer) VALUES (?, ?);', (self.controller.currentUserId, self.industry_var.get()))
+            self.controller.cursor.execute('INSERT INTO Value_Question (user_ID, value_answer) VALUES (?, ?);', (self.controller.currentUserId, self.values_var.get()))
+            self.controller.cursor.execute('INSERT INTO Benefit_Question (user_ID, benefit_answer) VALUES (?, ?);', (self.controller.currentUserId, self.benefits_var.get()))
+            self.controller.cursor.execute('INSERT INTO Location_Question (user_ID, location1, location2, location3) VALUES (?, ?, ?, ?);', (self.controller.currentUserId, self.location1_var.get(), self.location2_var.get(), self.location3_var.get()))
+            self.controller.cursor.execute('INSERT INTO Salary_Question (user_ID, expected_salary) VALUES (?, ?);', (self.controller.currentUserId, self.salary_var.get()))
+            self.controller.conn.commit()
+            
+            message = tk.Label(self, text = 'Uploading quiz results ...', font=('Tahoma',11, 'bold'), bg='green3')
+            message.place(x=150, y=340)
+            self.after(1500, lambda: message.place_forget())    # small delay to allow the message to be displayed for 1.5s
+            self.after(1500, lambda: self.controller.show_frame(QuizResultsPage))
+            self.after(1500, lambda: self.controller.frames[QuizResultsPage].updateQuizResultsPage())   # this updates the quiz results page through the controller to display the users quiz results.)
+            self.after(1500, lambda: self.clearAllResponses())
+        return
+    
+    def verifyEntries(self) -> bool:
+        message = tk.Label(self, text = 'Uploading quiz results ...', font=('Tahoma',11, 'bold'), bg='firebrick2')
+        if self.fullPartOrTmp_var.get() == '' or self.industry_var.get() == '' or self.values_var.get() == '' or self.benefits_var.get() == '' or self.location1_var.get() == '': 
+            message.config(text='One or more required entries were not answered. Failed to upload.')
+            message.place(x=140, y=340)
+            self.after(1500, lambda: message.place_forget())
+            return False
+        elif self.location1_var.get() == self.location2_var.get() or self.location1_var.get() == self.location3_var.get() or (self.location2_var.get() != '' and self.location3_var.get() != '' and self.location2_var.get() == self.location3_var.get()):
+            message.config(text='You selected locations that are duplicates, please choose different locations.')
+            message.place(x=140, y=340)
+            self.after(1500, lambda: message.place_forget())
+            return False
+        else:
+            return True
+
+
+class QuizResultsPage(tk.Frame):
+    def __init__(self, master, controller):
+        tk.Frame.__init__(self, master)
+        self.controller = controller
+        
+        backBtn = tk.Button(self, text="<- Back to Profile", command=lambda: self.controller.show_frame(ProfilePage), fg='Black', font=('Tahoma', 12))
+        backBtn.grid(padx=10, pady=10)
+        
+        titleLabel = tk.Label(self, text="Your highest matched company is...", fg='Black', bg=CONST_BGCOLOR, font=('Tahoma', 20, 'bold', 'underline'))
+        titleLabel.place(x=100, y=50)
+    
+    def updateQuizResultsPage(self) -> None:
+        self.createCompanyRecommendation()
+        return
+    
+    def createCompanyRecommendation(self) -> None:
+        self.controller.cursor.execute('''SELECT cname
+                                        FROM Company;''')
+        companies = self.controller.cursor.fetchall()
+        company_scores = []
+        
+        self.controller.cursor.execute("""SELECT I.industry_answer
+                                        FROM Industry_Question AS I
+                                        WHERE I.user_ID = ?;""", (self.controller.currentUserId,))
+        industry_answer = self.controller.cursor.fetchone()
+        self.controller.cursor.execute("""
+            SELECT C.cname
+            FROM Company AS C
+            WHERE C.industry = ?;""", (industry_answer[0],))
+        industry_companies = self.controller.cursor.fetchall()
+        
+        
+        self.controller.cursor.execute('''SELECT S.expected_salary
+                                        FROM Salary_Question AS S
+                                        WHERE S.user_ID = ?;''', (self.controller.currentUserId,))
+        expected_salary = self.controller.cursor.fetchone()
+        self.controller.cursor.execute("""
+            SELECT C.cname
+            FROM Company AS C 
+            WHERE C.avg_starting_salary >= ?;
+            """, (expected_salary[0],))
+        salary_companies = self.controller.cursor.fetchall()
+        
+        
+        self.controller.cursor.execute('''SELECT value_answer
+                                        FROM Value_Question
+                                        WHERE user_ID = ?;''', (self.controller.currentUserId,))
+        value_answer = self.controller.cursor.fetchone()
+        self.controller.cursor.execute("""
+            SELECT Company.cname
+            FROM Company
+            LEFT JOIN Company_Value ON Company.cname = Company_Value.cname 
+            WHERE Company_Value.value = ?;
+            """, (value_answer[0],))
+        value_companies = self.controller.cursor.fetchall()
+        
+        
+        self.controller.cursor.execute('''SELECT location1, location2, location3
+                                        FROM Location_Question
+                                        WHERE user_ID = ?;''', (self.controller.currentUserId,))
+        locations = self.controller.cursor.fetchone()
+        self.controller.cursor.execute("""
+            SELECT Company.cname
+            FROM Company 
+            LEFT JOIN Company_Location ON Company.cname = Company_Location.cname
+            WHERE Company_Location.location IN (?, ?, ?);
+            """, (locations[0], locations[1], locations[2]))
+        location_companies = self.controller.cursor.fetchall()
+        
+        
+        self.controller.cursor.execute('''SELECT benefit_answer
+                                        FROM Benefit_Question
+                                        WHERE user_ID = ?;''', (self.controller.currentUserId,))
+        benefit_answer = self.controller.cursor.fetchone()
+        self.controller.cursor.execute("""
+            SELECT Company.cname
+            FROM Company 
+            LEFT JOIN Company_Benefit ON Company.cname = Company_Benefit.cname 
+            WHERE Company_Benefit.benefit = ?;
+            """, (benefit_answer[0],))
+        benefit_companies = self.controller.cursor.fetchall()
+        
+        
+        self.controller.cursor.execute('''SELECT time_answer
+                                        FROM Time_Question
+                                        WHERE user_ID = ?;''', (self.controller.currentUserId,))
+        time_answer = self.controller.cursor.fetchone()
+        self.controller.cursor.execute("""
+            SELECT Company.cname
+            FROM Company 
+            LEFT JOIN Job_Listing ON Company.cname = Job_Listing.cname 
+            WHERE Job_Listing.full_part_temp = ?;
+            """, (time_answer[0],))
+        time_companies = self.controller.cursor.fetchall()
+        
+        
+        newIndustryCompanies = []
+        for company in industry_companies:
+            newIndustryCompanies.append(company[0])
+        
+        newSalaryCompanies = []
+        for company in salary_companies:
+            newSalaryCompanies.append(company[0])
+        
+        newValueCompanies = []
+        for company in value_companies:
+            newValueCompanies.append(company[0])
+        
+        newLocationCompanies = []
+        for company in location_companies:
+            newLocationCompanies.append(company[0])
+        
+        newBenefitCompanies = []
+        for company in benefit_companies:
+            newBenefitCompanies.append(company[0])
+        
+        newTimeCompanies = []
+        for company in time_companies:
+            newTimeCompanies.append(company[0])
+        
+        
+        
+        for company in companies:
+            score = 0
+            
+            if company[0] in newIndustryCompanies:
+                score += 10
+            if company[0] in newSalaryCompanies:
+                score += 10
+            if company[0] in newValueCompanies:
+                score += 10
+            if company[0] in newLocationCompanies:
+                score += 10
+            if company[0] in newBenefitCompanies:
+                score += 10
+            if company[0] in newTimeCompanies:
+                score += 10
+            
+            score_percentage = (score / 60) * 100
+            company_scores.append((company[0], score_percentage))
+        
+        sorted_companies = sorted(company_scores, key=lambda x: x[1], reverse=True)
+        
+        top_company = sorted_companies[0]
+        print(f"Top Company Match: {top_company[0]}, Score: {top_company[1]:.2f}%")
+        
+        match_strength = top_company[1] / 100
+        # self.controller.cursor.execute("""
+        #     INSERT INTO Recommendation (user_ID, match_strength, cname)
+        #     VALUES (?, ?, ?)
+        #     """, (user_id, match_strength, top_company[0]))
+        # self.controller.conn.commit()
 
 
 class Pathways(tk.Tk):
@@ -375,24 +597,24 @@ class Pathways(tk.Tk):
         self.geometry(f"{CONST_HEIGHT}x{CONST_WIDTH}+600+100")
         self.resizable(False,False)
         
+        self.conn = sqlite3.connect('pathways.db') 
+        self.cursor = self.conn.cursor()
+        
+        self.currentUserId = -1
+        
         container = tk.Frame(self)
         container.pack(side="top", fill="both", expand=True)
         container.grid_rowconfigure(0, weight=1)
         container.grid_columnconfigure(0, weight=1)
         
         self.frames = {}
-        for F in (LandingPage, SignInPage, CreateAccPage, ProfilePage, QuizPage):
+        for F in (LandingPage, SignInPage, CreateAccPage, ProfilePage, QuizPage, QuizResultsPage):
             frame = F(container, self)
             self.frames[F] = frame
             frame.grid(row=0, column=0, sticky="nsew")
             frame.configure(background=CONST_BGCOLOR)
         
         self.show_frame(LandingPage)
-        
-        self.conn = sqlite3.connect('pathways.db') 
-        self.cursor = self.conn.cursor()
-        
-        self.currentUserId = -1
     
     def show_frame(self, cont) -> None:
         frame = self.frames[cont]
