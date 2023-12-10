@@ -69,7 +69,7 @@ class SignInPage(tk.Frame):
             message.config(text='Successfully signed in! Taking you to your profile page...', bg='green3')
             message.place(x=140, y=340)
             self.after(1500, lambda: message.place_forget())    # small delay to allow the message to be displayed for 1.5s
-            self.after(1500, lambda: self.controller.show_frame(ProfilePage))
+            self.after(1500, lambda: self.sendToProfilePage())
             self.after(1500, lambda: self.email_entry.delete(0,'end'))
             self.after(1500, lambda: self.passw_entry.delete(0,'end'))
         elif self.accountExistsInDatabase() is False:
@@ -100,6 +100,18 @@ class SignInPage(tk.Frame):
         else:
             return False
         return True
+    
+    def sendToProfilePage(self) -> None:
+        self.controller.frames[ProfilePage].showNameText()
+        
+        self.controller.cursor.execute('''SELECT user_ID
+                                        FROM Recommendation
+                                        WHERE user_ID = ?;''', (self.controller.currentUserId,))
+        userID = self.controller.cursor.fetchone()
+        if userID is not None:
+            self.controller.frames[ProfilePage].showResultsBtn()
+        self.controller.show_frame(ProfilePage)
+        return
 
 
 class CreateAccPage(tk.Frame):
@@ -175,7 +187,7 @@ class CreateAccPage(tk.Frame):
             self.emptyEntries(False, False, True, True)
         else:
             message.config(text = "Account creation successful! Sending you to sign in...", bg='green3')
-            self.emptyEntries(True, False, False, False)
+            self.after(2500, lambda: self.emptyEntries(True, False, False, False))
         
         if message['bg'] == 'green3':
             message.place(x=140, y=340)
@@ -236,14 +248,9 @@ class ProfilePage(tk.Frame):
         takeQuizBtn = tk.Button(self, text="Take A Preferences Quiz!", command=lambda: self.sendToQuiz(), fg='Black', font=('Tahoma', 12))
         takeQuizBtn.place(x=238, y=120)
         
-        # self.controller.cursor.execute('SELECT first_name, last_name FROM User WHERE user_ID=?;', (self.controller.currentUserId,))
-        # names = self.controller.cursor.fetchall()
-        # self.fname = names[0]
-        # self.lname = names[1]
-        # nameText = f'Hello {self.fname} {self.lname}!'
-        # nameLabel = tk.Label(self, text=nameText, fg='Black', bg=CONST_BGCOLOR, font=('Tahoma', 15, 'bold'))
-        # nameLabel.place(x=250, y=200)
-        
+        self.nameLabel = tk.Label(self, text='', fg='Black', bg=CONST_BGCOLOR, font=('Tahoma', 13, 'italic'))
+        self.nameLabel.place(x=510, y=10)
+    
     def signOut(self) -> None:
         self.controller.currentUserId = -1
         self.controller.show_frame(LandingPage)
@@ -280,12 +287,36 @@ class ProfilePage(tk.Frame):
                                         FROM Location_Question
                                         WHERE user_ID = ?;
                                         ''', (self.controller.currentUserId,))
+            self.controller.cursor.execute('''DELETE
+                                        FROM Recommendation
+                                        WHERE user_ID = ?;
+                                        ''', (self.controller.currentUserId,))
             self.controller.conn.commit()
         self.controller.show_frame(QuizPage)
     
     def showNameText(self) -> None:
+        self.controller.cursor.execute('SELECT first_name, last_name FROM User WHERE user_ID=?;', (self.controller.currentUserId,))
+        names = self.controller.cursor.fetchone()
+        fname = names[0]
+        lname = names[1]
+        if fname is not None and lname is not None:
+            nameText = f'Hello {fname} {lname}!'
+            self.nameLabel.configure(text=nameText)
+        elif fname is not None and lname is None:
+            nameText = f'Hello {fname}!'
+            self.nameLabel.configure(text=nameText)
         return
-
+    
+    def showResultsBtn(self) -> None:
+        goToResultsBtn = tk.Button(self, text="See your last quiz results!", command=lambda: self.sendToResults(), fg='Black', font=('Tahoma', 12))
+        goToResultsBtn.place(x=238, y=200)
+        return
+    
+    def sendToResults(self) -> None:
+        self.controller.show_frame(QuizResultsPage)
+        self.controller.frames[QuizResultsPage].pullOldRecommendation()
+        self.controller.frames[QuizResultsPage].displayCompanyJobs()
+        return
 
 class QuizPage(tk.Frame):
     def __init__(self, master, controller):
@@ -413,7 +444,7 @@ class QuizPage(tk.Frame):
             self.controller.conn.commit()
             
             message = tk.Label(self, text = 'Uploading quiz results ...', font=('Tahoma',11, 'bold'), bg='green3')
-            message.place(x=150, y=340)
+            message.place(x=250, y=340)
             self.after(1500, lambda: message.place_forget())    # small delay to allow the message to be displayed for 1.5s
             self.after(1500, lambda: self.controller.show_frame(QuizResultsPage))
             self.after(1500, lambda: self.controller.frames[QuizResultsPage].updateQuizResultsPage())   # this updates the quiz results page through the controller to display the users quiz results.)
@@ -424,7 +455,7 @@ class QuizPage(tk.Frame):
         message = tk.Label(self, text = 'Uploading quiz results ...', font=('Tahoma',11, 'bold'), bg='firebrick2')
         if self.fullPartOrTmp_var.get() == '' or self.industry_var.get() == '' or self.values_var.get() == '' or self.benefits_var.get() == '' or self.location1_var.get() == '': 
             message.config(text='One or more required entries were not answered. Failed to upload.')
-            message.place(x=140, y=340)
+            message.place(x=120, y=340)
             self.after(1500, lambda: message.place_forget())
             return False
         elif self.location1_var.get() == self.location2_var.get() or self.location1_var.get() == self.location3_var.get() or (self.location2_var.get() != '' and self.location3_var.get() != '' and self.location2_var.get() == self.location3_var.get()):
@@ -441,17 +472,54 @@ class QuizResultsPage(tk.Frame):
         tk.Frame.__init__(self, master)
         self.controller = controller
         
-        backBtn = tk.Button(self, text="<- Back to Profile", command=lambda: self.controller.show_frame(ProfilePage), fg='Black', font=('Tahoma', 12))
+        backBtn = tk.Button(self, text="<- Back to Profile", command=lambda: self.goToProfilePage(), fg='Black', font=('Tahoma', 12))
         backBtn.grid(padx=10, pady=10)
         
         titleLabel = tk.Label(self, text="Your highest matched company is...", fg='Black', bg=CONST_BGCOLOR, font=('Tahoma', 20, 'bold', 'underline'))
         titleLabel.place(x=100, y=50)
+        
+        self.companyLabel = tk.Label(self, text="", fg='Black', bg=CONST_BGCOLOR, font=('Calibri', 30, 'bold'))
+        self.companyLabel.place(x=70, y=200)
+        
+        self.jobsLabel = tk.Label(self, text="", fg='Black', bg=CONST_BGCOLOR, font=('Calibri', 14, 'italic'))
+        self.jobsLabel.place(x=240, y=340)
     
-    def updateQuizResultsPage(self) -> None:
-        self.createCompanyRecommendation()
+    def goToProfilePage(self) -> None:
+        self.controller.frames[ProfilePage].showResultsBtn()
+        self.controller.show_frame(ProfilePage)
         return
     
-    def createCompanyRecommendation(self) -> None:
+    def displayCompanyJobs(self) -> None:
+        self.controller.cursor.execute('''SELECT cname
+                                        FROM Recommendation
+                                        WHERE user_ID = ?;''', (self.controller.currentUserId,))
+        matchedCompany = self.controller.cursor.fetchone()
+        
+        self.controller.cursor.execute('''SELECT job_title
+                                        FROM Job_Listing
+                                        WHERE cname = ?;''', (matchedCompany[0],))
+        jobs = self.controller.cursor.fetchall()
+        self.jobsLabel.configure(text=f"Potential Jobs:\n{jobs[0][0]}\n{jobs[1][0]}")
+        return
+    
+    def pullOldRecommendation(self) -> None:
+        self.controller.cursor.execute('''SELECT match_strength, cname
+                                        FROM Recommendation
+                                        WHERE user_ID = ?;''', (self.controller.currentUserId,))
+        strengthAndCompany = self.controller.cursor.fetchone()
+        self.companyLabel.configure(text=f"{strengthAndCompany[1]}\n with a match score of {strengthAndCompany[0]:.2f}%!")
+        return
+    
+    def updateQuizResultsPage(self) -> None:
+        self.companyLabel.configure(text="")
+        self.jobsLabel.configure(text="")
+        topCompany = self.createCompanyRecommendation()
+        self.after(1500, lambda: self.companyLabel.configure(text=f"{topCompany[0]}\n with a match score of {topCompany[1]:.2f}%!"))
+        self.after(1500, lambda: self.displayCompanyJobs())
+        
+        return
+    
+    def createCompanyRecommendation(self):
         self.controller.cursor.execute('''SELECT cname
                                         FROM Company;''')
         companies = self.controller.cursor.fetchall()
@@ -475,8 +543,8 @@ class QuizResultsPage(tk.Frame):
         self.controller.cursor.execute("""
             SELECT C.cname
             FROM Company AS C 
-            WHERE C.avg_starting_salary >= ?;
-            """, (expected_salary[0],))
+            WHERE C.avg_starting_salary + 10000 > ? AND C.avg_starting_salary - 10000 < ?;
+            """, (expected_salary[0], expected_salary[0],))
         salary_companies = self.controller.cursor.fetchall()
         
         
@@ -556,8 +624,6 @@ class QuizResultsPage(tk.Frame):
         for company in time_companies:
             newTimeCompanies.append(company[0])
         
-        
-        
         for company in companies:
             score = 0
             
@@ -580,14 +646,14 @@ class QuizResultsPage(tk.Frame):
         sorted_companies = sorted(company_scores, key=lambda x: x[1], reverse=True)
         
         top_company = sorted_companies[0]
-        print(f"Top Company Match: {top_company[0]}, Score: {top_company[1]:.2f}%")
-        
         match_strength = top_company[1] / 100
-        # self.controller.cursor.execute("""
-        #     INSERT INTO Recommendation (user_ID, match_strength, cname)
-        #     VALUES (?, ?, ?)
-        #     """, (user_id, match_strength, top_company[0]))
-        # self.controller.conn.commit()
+        self.controller.cursor.execute("""
+            INSERT INTO Recommendation (user_ID, match_strength, cname)
+            VALUES (?, ?, ?);
+            """, (self.controller.currentUserId, top_company[1], top_company[0],))
+        self.controller.conn.commit()
+        
+        return top_company
 
 
 class Pathways(tk.Tk):
@@ -597,7 +663,7 @@ class Pathways(tk.Tk):
         self.geometry(f"{CONST_HEIGHT}x{CONST_WIDTH}+600+100")
         self.resizable(False,False)
         
-        self.conn = sqlite3.connect('pathways.db') 
+        self.conn = sqlite3.connect('pathways.sql') 
         self.cursor = self.conn.cursor()
         
         self.currentUserId = -1
